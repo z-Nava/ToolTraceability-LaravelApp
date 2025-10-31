@@ -18,9 +18,12 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
+        'employee_no',
         'name',
         'email',
         'password',
+        'role',
+        'is_active',
     ];
 
     /**
@@ -39,6 +42,21 @@ class User extends Authenticatable
      * @var array<string, string>
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
+        'is_active' => 'boolean',
     ];
+
+    public function productionRuns()
+    {
+        return $this->hasMany(ProductionRun::class, 'started_by');
+    }
+
+    public function stationSessions()
+    {
+        return $this->hasMany(StationSession::class, 'leader_user_id');
+    }
+
+    public function auditLogs()
+    {
+        return $this->hasMany(AuditLog::class);
+    }
 }
