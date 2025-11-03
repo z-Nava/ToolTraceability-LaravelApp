@@ -13,7 +13,7 @@ use App\Http\Controllers\Production\DashboardController as ProdDashboard;
 use App\Http\Controllers\Production\StationSessionController;
 use App\Http\Controllers\Production\DummyTagController;
 use App\Http\Controllers\Production\StationClosureController;
-
+use App\Http\Controllers\AuthController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -28,6 +28,10 @@ use App\Http\Controllers\Production\StationClosureController;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login.form');
+Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth', 'role:supervisor'])
     ->prefix('supervisor')
