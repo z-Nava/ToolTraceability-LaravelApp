@@ -5,59 +5,76 @@ namespace App\Http\Controllers\Production;
 use App\Http\Controllers\Controller;
 use App\Models\StationSession;
 use App\Models\ComponentScan;
-use App\Models\DummyTag;
 use App\Models\Component;
+use App\Models\DummyTag;
+use App\Services\Trace\ScanValidatorService;
 use Illuminate\Http\Request;
 
 class DummyTagController extends Controller
 {
+    protected ScanValidatorService $validator;
+
+    public function __construct(ScanValidatorService $validator)
+    {
+        $this->validator = $validator;
+    }
+
     public function scan(StationSession $stationSession)
     {
         $dummy = DummyTag::where('production_run_id', $stationSession->production_run_id)
-            ->where('status', 'IN_PROGRESS')
             ->latest()
             ->first();
 
-        return view('production.stations.scan', compact('stationSession', 'dummy'));
+        $recentScans = ComponentScan::where('production_run_id', $stationSession->production_run_id)
+            ->where('station_id', $stationSession->station_id)
+            ->orderByDesc('id')
+            ->take(10)
+            ->get();
+
+        return view('production.stations.scan', compact('stationSession', 'dummy', 'recentScans'));
     }
 
     public function process(Request $request, StationSession $stationSession)
     {
-        $data = $request->validate([
-            'qr_input' => 'required|string',
-        ]);
+        $qr = $request->validate(['qr_input' => 'required|string'])['qr_input'];
+        $fgModelId = $stationSession->productionRun->fg_model_id;
+        $stationId = $stationSession->station_id;
+        $userId = auth()->id();
 
-        $qr = $data['qr_input'];
-
-        // Si es un DUMMY
+        // 1️⃣ Detección de Dummy QR
         if (str_starts_with($qr, '^DM^')) {
-            $dummy = DummyTag::create([
+            DummyTag::create([
                 'production_run_id' => $stationSession->production_run_id,
                 'dummy_code' => $qr,
-                'current_station_id' => $stationSession->station_id,
+                'current_station_id' => $stationId,
                 'opened_at' => now(),
             ]);
 
-            return back()->with('success', 'Dummy QR registrado correctamente.');
+            return back()->with('success', '✅ Dummy QR registrado correctamente.');
         }
 
-        // Si es un componente
-        $component = Component::where('part_number', 'like', '%' . substr($qr, -9) . '%')->first();
+        // 2️⃣ Detección de Componente
+        $component = Component::where('part_number', 'like', '%' . preg_replace('/[^0-9]/', '', $qr) . '%')->first();
+        $validation = $this->validator->validateComponent($fgModelId, $stationId, $component, $qr);
 
         ComponentScan::create([
             'production_run_id' => $stationSession->production_run_id,
-            'station_id' => $stationSession->station_id,
-            'dummy_tag_id' => $stationSession->dummy_tag_id ?? null,
+            'station_id' => $stationId,
+            'dummy_tag_id' => null,
             'scanned_raw' => $qr,
             'part_number_detected' => $component?->part_number ?? 'DESCONOCIDO',
             'component_id' => $component?->id,
             'component_type_id' => $component?->component_type_id,
-            'is_valid' => $component ? true : false,
-            'validation_error' => $component ? null : 'Componente no encontrado',
-            'scanned_by' => auth()->id(),
+            'is_valid' => $validation['is_valid'],
+            'validation_error' => $validation['error'],
+            'scanned_by' => $userId,
             'scanned_at' => now(),
         ]);
 
-        return back()->with('success', 'Escaneo registrado.');
+        if ($validation['is_valid']) {
+            return back()->with('success', '✅ Escaneo válido: componente aceptado.');
+        }
+
+        return back()->with('error', '❌ ' . $validation['error']);
     }
 }

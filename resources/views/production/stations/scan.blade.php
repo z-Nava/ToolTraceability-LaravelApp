@@ -9,19 +9,45 @@
     <p><strong>Corrida:</strong> #{{ $stationSession->production_run_id }}</p>
 </div>
 
-<form method="POST" action="{{ route('production.dummy.scan.process', $stationSession) }}" class="bg-white p-6 rounded shadow">
+<form method="POST" action="{{ route('production.dummy.scan.process', $stationSession) }}" class="bg-white p-6 rounded shadow mb-6">
     @csrf
+    <label class="block mb-2 font-medium">Escanear código QR</label>
+    <input type="text" name="qr_input" autofocus class="w-full border rounded p-2 mb-4" placeholder="Escanee el QR aquí..." required>
 
-    <label class="block mb-2 font-medium">Escanear QR (componente o dummy)</label>
-    <input type="text" name="qr_input" autofocus class="w-full border rounded p-2 mb-4" placeholder="Escanee el código..." required>
-
-    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Registrar</button>
-    <a href="{{ route('production.stations.close', $stationSession) }}" class="ml-2 text-gray-600 hover:underline">Cerrar estación</a>
+    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Registrar escaneo</button>
 </form>
 
 @if(session('success'))
-    <div class="bg-green-100 text-green-800 p-2 mt-4 rounded">
-        {{ session('success') }}
-    </div>
+    <div class="bg-green-100 text-green-800 p-2 mb-4 rounded">{{ session('success') }}</div>
+@endif
+
+@if(session('error'))
+    <div class="bg-red-100 text-red-800 p-2 mb-4 rounded">{{ session('error') }}</div>
+@endif
+
+@if($recentScans->count())
+    <h3 class="text-lg font-semibold mb-2">Escaneos recientes</h3>
+    <table class="min-w-full bg-white border rounded shadow text-sm">
+        <thead class="bg-gray-200">
+            <tr>
+                <th class="py-2 px-3 text-left">Componente</th>
+                <th class="py-2 px-3 text-left">Tipo</th>
+                <th class="py-2 px-3 text-left">Estado</th>
+                <th class="py-2 px-3 text-left">Hora</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($recentScans as $scan)
+            <tr class="border-b">
+                <td class="py-2 px-3">{{ $scan->part_number_detected }}</td>
+                <td class="py-2 px-3">{{ $scan->componentType->name ?? '-' }}</td>
+                <td class="py-2 px-3 {{ $scan->is_valid ? 'text-green-600' : 'text-red-600' }}">
+                    {{ $scan->is_valid ? 'Válido' : 'Inválido' }}
+                </td>
+                <td class="py-2 px-3">{{ $scan->scanned_at->format('H:i:s') }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
 @endif
 @endsection
