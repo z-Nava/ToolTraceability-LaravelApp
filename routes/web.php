@@ -8,6 +8,8 @@ use App\Http\Controllers\Supervisor\ComponentController;
 use App\Http\Controllers\Supervisor\TracePlanController;
 use App\Http\Controllers\Supervisor\ComponentTypeController;
 use App\Http\Controllers\Supervisor\DashboardController;
+use App\Http\Controllers\Production\ProductionRunController;
+use App\Http\Controllers\Production\DashboardController as ProdDashboard;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,5 +45,15 @@ Route::middleware(['auth', 'role:supervisor'])
 
         // Planes de trazabilidad
         Route::resource('trace-plans', TracePlanController::class);
+    });
+
+Route::middleware(['auth', 'role:leader'])
+    ->prefix('production')
+    ->name('production.')
+    ->group(function () {
+        Route::get('/', [ProdDashboard::class, 'index'])->name('dashboard');
+        Route::post('/runs', [ProductionRunController::class, 'store'])->name('runs.store');
+        Route::get('/runs/{productionRun}', [ProductionRunController::class, 'show'])->name('runs.show');
+        Route::post('/runs/{productionRun}/end', [ProductionRunController::class, 'end'])->name('runs.end');
     });
 
