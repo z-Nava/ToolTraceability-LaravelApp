@@ -10,6 +10,9 @@ use App\Http\Controllers\Supervisor\ComponentTypeController;
 use App\Http\Controllers\Supervisor\DashboardController;
 use App\Http\Controllers\Production\ProductionRunController;
 use App\Http\Controllers\Production\DashboardController as ProdDashboard;
+use App\Http\Controllers\Production\StationSessionController;
+use App\Http\Controllers\Production\DummyTagController;
+use App\Http\Controllers\Production\StationClosureController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,5 +58,12 @@ Route::middleware(['auth', 'role:leader'])
         Route::post('/runs', [ProductionRunController::class, 'store'])->name('runs.store');
         Route::get('/runs/{productionRun}', [ProductionRunController::class, 'show'])->name('runs.show');
         Route::post('/runs/{productionRun}/end', [ProductionRunController::class, 'end'])->name('runs.end');
+
+        // Estaciones
+        Route::get('/runs/{productionRun}/station', [StationSessionController::class, 'create'])->name('stations.session');
+        Route::post('/runs/{productionRun}/station', [StationSessionController::class, 'store'])->name('stations.store');
+        Route::get('/stations/{stationSession}/scan', [DummyTagController::class, 'scan'])->name('stations.scan');
+        Route::post('/stations/{stationSession}/scan', [DummyTagController::class, 'process'])->name('dummy.scan.process');
+        Route::post('/stations/{stationSession}/close', [StationClosureController::class, 'close'])->name('stations.close');
     });
 
