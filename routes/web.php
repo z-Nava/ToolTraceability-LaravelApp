@@ -6,6 +6,8 @@ use App\Http\Controllers\Supervisor\StationController;
 use App\Http\Controllers\Supervisor\FGModelController;
 use App\Http\Controllers\Supervisor\ComponentController;
 use App\Http\Controllers\Supervisor\TracePlanController;
+use App\Http\Controllers\Supervisor\ComponentTypeController;
+use App\Http\Controllers\Supervisor\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,11 +24,24 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::middleware(['auth', 'role:supervisor'])->prefix('supervisor')->name('supervisor.')->group(function () {
-    Route::resource('lines', LineController::class);
-    Route::resource('stations', StationController::class);
-    Route::resource('fg-models', FGModelController::class);
-    Route::resource('components', ComponentController::class);
-    Route::resource('trace-plans', TracePlanController::class);
-});
+Route::middleware(['auth', 'role:supervisor'])
+    ->prefix('supervisor')
+    ->name('supervisor.')
+    ->group(function () {
+
+        // Dashboard (vista principal del panel)
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+        // Catálogos base
+        Route::resource('lines', LineController::class);
+        Route::resource('stations', StationController::class);
+
+        // Modelos y componentes
+        Route::resource('fg-models', FGModelController::class);
+        Route::resource('components', ComponentController::class);
+        Route::resource('component-types', ComponentTypeController::class);
+
+        // Planes de trazabilidad
+        Route::resource('trace-plans', TracePlanController::class);
+    });
 
