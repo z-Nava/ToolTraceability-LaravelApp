@@ -55,6 +55,8 @@ Route::middleware(['auth', 'role:leader'])
     ->name('production.')
     ->group(function () {
         Route::get('/', [ProdDashboard::class, 'index'])->name('dashboard');
+
+        // Corridas
         Route::post('/runs', [ProductionRunController::class, 'store'])->name('runs.store');
         Route::get('/runs/{productionRun}', [ProductionRunController::class, 'show'])->name('runs.show');
         Route::post('/runs/{productionRun}/end', [ProductionRunController::class, 'end'])->name('runs.end');
@@ -62,8 +64,12 @@ Route::middleware(['auth', 'role:leader'])
         // Estaciones
         Route::get('/runs/{productionRun}/station', [StationSessionController::class, 'create'])->name('stations.session');
         Route::post('/runs/{productionRun}/station', [StationSessionController::class, 'store'])->name('stations.store');
+
+        // Escaneo
         Route::get('/stations/{stationSession}/scan', [DummyTagController::class, 'scan'])->name('stations.scan');
         Route::post('/stations/{stationSession}/scan', [DummyTagController::class, 'process'])->name('dummy.scan.process');
+
+        // Resumen y cierre
+        Route::get('/stations/{stationSession}/summary', [StationClosureController::class, 'summary'])->name('stations.summary');
         Route::post('/stations/{stationSession}/close', [StationClosureController::class, 'close'])->name('stations.close');
     });
-
